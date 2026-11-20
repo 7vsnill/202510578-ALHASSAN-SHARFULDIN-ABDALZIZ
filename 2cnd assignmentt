@@ -1,0 +1,143 @@
+import java.util.Arrays;
+import java.util.Scanner;
+
+public class Main {
+    private static final int CORRECT_PIN = 1234;
+    private static final int MAX_PIN_ATTEMPTS = 3;
+    private static final double INITIAL_BALANCE = 1000.00;
+
+    public static void main(String[] args) {
+        Scanner input = new Scanner(System.in);
+
+        if (!authenticate(input)) {
+            System.out.println("Too many incorrect attempts. Access denied.");
+            return;
+        }
+
+        double balance = INITIAL_BALANCE;
+        String[] transactions = new String[10];
+        int transactionCount = 0;
+        boolean running = true;
+
+        while (running) {
+            System.out.println("\nATM MENU");
+            System.out.println("1. Check balance");
+            System.out.println("2. Deposit money");
+            System.out.println("3. Withdraw money");
+            System.out.println("4. View transactions");
+            System.out.println("5. Exit");
+
+            Integer choice = readInteger(input, "Choose an option: ");
+            if (choice == null) {
+                break;
+            }
+
+            switch (choice) {
+                case 1:
+                    System.out.printf("Current balance: $%.2f%n", balance);
+                    break;
+                case 2: {
+                    Double amount = readPositiveAmount(input);
+                    if (amount == null) {
+                        running = false;
+                        break;
+                    }
+                    balance += amount;
+                    transactions = addTransaction(
+                            transactions, transactionCount++, String.format("Deposit: $%.2f", amount));
+                    System.out.printf("Deposit successful. New balance: $%.2f%n", balance);
+                    break;
+                }
+                case 3: {
+                    Double amount = readPositiveAmount(input);
+                    if (amount == null) {
+                        running = false;
+                        break;
+                    }
+                    if (amount > balance) {
+                        System.out.println("Insufficient funds. Withdrawal cancelled.");
+                    } else {
+                        balance -= amount;
+                        transactions = addTransaction(
+                                transactions, transactionCount++, String.format("Withdrawal: $%.2f", amount));
+                        System.out.printf("Withdrawal successful. New balance: $%.2f%n", balance);
+                    }
+                    break;
+                }
+                case 4:
+                    if (transactionCount == 0) {
+                        System.out.println("No transactions yet.");
+                    } else {
+                        System.out.println("Transaction history:");
+                        for (int i = 0; i < transactionCount; i++) {
+                            System.out.println((i + 1) + ". " + transactions[i]);
+                        }
+                    }
+                    break;
+                case 5:
+                    running = false;
+                    System.out.println("Thank you for using the ATM.");
+                    break;
+                default:
+                    System.out.println("Invalid option. Please choose 1 through 5.");
+            }
+        }
+    }
+
+    private static boolean authenticate(Scanner input) {
+        for (int attempt = 1; attempt <= MAX_PIN_ATTEMPTS; attempt++) {
+            System.out.print("Enter your PIN: ");
+            if (!input.hasNextLine()) {
+                return false;
+            }
+            if (input.nextLine().trim().equals(String.valueOf(CORRECT_PIN))) {
+                System.out.println("Login successful.");
+                return true;
+            }
+            System.out.println("Incorrect PIN. Attempts remaining: "
+                    + (MAX_PIN_ATTEMPTS - attempt));
+        }
+        return false;
+    }
+
+    private static Integer readInteger(Scanner input, String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            if (!input.hasNextLine()) {
+                return null;
+            }
+            try {
+                return Integer.parseInt(input.nextLine().trim());
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a whole number.");
+            }
+        }
+    }
+
+    private static Double readPositiveAmount(Scanner input) {
+        while (true) {
+            System.out.print("Enter amount: ");
+            if (!input.hasNextLine()) {
+                return null;
+            }
+            try {
+                double amount = Double.parseDouble(input.nextLine().trim());
+                if (Double.isFinite(amount) && amount > 0) {
+                    return amount;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a valid amount greater than zero.");
+                continue;
+            }
+            System.out.println("Please enter a valid amount greater than zero.");
+        }
+    }
+
+    private static String[] addTransaction(String[] transactions, int index, String transaction) {
+        if (index == transactions.length) {
+            transactions = Arrays.copyOf(transactions, transactions.length * 2);
+        }
+        transactions[index] = transaction;
+        return transactions;
+    }
+}
